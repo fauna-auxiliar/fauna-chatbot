@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Permitir tu blog como origen
+# Origen exacto de tu blog
 origins = [
-    "https://faunaauxiliar.blogspot.com",
+    "https://faunaauxiliar.blogspot.com"
 ]
 
 app.add_middleware(
@@ -16,8 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/")
-async def chat_endpoint(message: dict):
-    user_message = message.get("message", "")
-    # Aquí tu lógica del chatbot
+@app.post("/chat")
+async def chat_endpoint(data: dict):
+    user_message = data.get("message", "")
     return {"message": f"Recibido: {user_message}"}
