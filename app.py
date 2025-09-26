@@ -1,24 +1,40 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+import openai
+import os
 
 app = FastAPI()
 
-# Permitir solicitudes desde tu blog
+# Configuración de CORS para tu blog
+origins = [
+    "https://faunaauxiliar.blogspot.com",  # tu blog
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://faunaauxiliar.blogspot.com"],  # o ["*"] para todos
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Modelo de mensaje
-class Message(BaseModel):
-    message: str
-
+# Endpoint del chatbot
 @app.post("/")
-async def chat(msg: Message):
-    # Aquí puedes integrar OpenAI o lógica de tu chatbot
-    user_msg = msg.message
-    bot_msg = f"Recibido: {user_msg}"  # ejemplo simple
-    return {"message": bot_msg}
+async def chat_endpoint(request: Request):
+    data = await request.json()
+    user_message = data.get("message", "")
+
+    # Lógica del chatbot con OpenAI
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": user_message}]
+    )
+
+    reply = response.choices[0].message.content
+    return {"message": reply}
+
+# Endpoint de prueba opcional
+@app.get("/")
+async def root():
+    return {"message": "El chatbot está activo"}
