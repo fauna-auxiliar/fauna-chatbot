@@ -34,3 +34,20 @@ async def chat_endpoint(request: ChatRequest):
 @app.get("/")
 async def root():
     return {"message": "API funcionando correctamente!"}
+    from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Configura CORS
+origins = [
+    "*"  # O la URL de tu frontend, ejemplo: "https://mi-frontend.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite POST, GET, OPTIONS, etc.
+    allow_headers=["*"],
+)
+
