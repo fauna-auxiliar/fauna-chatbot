@@ -10,33 +10,36 @@ app = FastAPI()
 # Configura CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Puedes poner tu blog: ["https://faunaauxiliar.blogspot.com"]
+    allow_origins=["*"],  # Puedes poner la URL de tu blog en lugar de "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configura el cliente de OpenAI con tu API key
+# Cliente de OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Modelo de datos para la request
+# Modelo de datos
 class ChatRequest(BaseModel):
     message: str
 
 # Endpoint /chat
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
+    user_message = request.message
+
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # más rápido y barato
-            messages=[{"role": "user", "content": request.message}]
+            model="gpt-4o-mini",  
+            messages=[{"role": "user", "content": user_message}]
         )
         reply = response.choices[0].message.content
-        return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error con OpenAI: {str(e)}")
 
-# Endpoint de prueba raíz
+    return {"reply": reply}
+
+# Endpoint raíz
 @app.get("/")
 async def root():
     return {"message": "API funcionando correctamente!"}
