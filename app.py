@@ -10,7 +10,7 @@ app = FastAPI()
 # Configura CORS (la URL exacta de tu blog)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Cambia por tu URL real
+    allow_origins=["https://faunaauxiliar.blogspot.com"],  # Cambia por tu URL real
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
