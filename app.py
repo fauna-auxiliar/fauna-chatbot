@@ -1,41 +1,38 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import openai
+import os
+
+# Configura tu API key de OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 app = FastAPI()
 
-# Configurar CORS
+# Permitir peticiones desde cualquier origen (solo para pruebas)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permite cualquier origen
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configura tu API key de OpenAI
-openai.api_key = "TU_API_KEY_AQUI"
-
-class ChatRequest(BaseModel):
-    prompt: str
-
-@app.get("/")
-async def root():
-    return {"message": "API funcionando correctamente"}
-
 @app.post("/chat")
-async def chat(request: ChatRequest):
-    if not request.prompt:
-        raise HTTPException(status_code=400, detail="No se proporcionó un prompt")
+async def chat_endpoint(request: Request):
+    data = await request.json()
+    user_message = data.get("message")
+    
+    if not user_message:
+        return JSONResponse(status_code=400, content={"error": "No message provided"})
 
     try:
-        response = openai.Completion.create(
-            model="text-davinci-003",
-            prompt=request.prompt,
-            max_tokens=150,
-            temperature=0.7
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": user_message}],
         )
-        return {"response": response.choices[0].text.strip()}
+        answer = response.choices[0].message.content.strip()
+        return {"answer": answer}
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(status_code=500, content={"error": str(e)})
