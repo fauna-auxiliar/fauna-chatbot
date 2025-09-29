@@ -27,15 +27,18 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat_endpoint(request: ChatRequest):
     user_message = request.message
-
     try:
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",  # Cambia si quieres otro modelo
-            messages=[{"role": "user", "content": user_message}],
-            temperature=0.7
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": user_message}]
         )
+        print("Respuesta OpenAI:", response)  # <--- imprime en logs de Render
         reply = response.choices[0].message.content
-        return {"reply": reply}
+    except Exception as e:
+        print("Error OpenAI:", e)  # <--- imprime error real
+        raise HTTPException(status_code=500, detail=f"Error con OpenAI: {str(e)}")
+    return {"reply": reply}
+
 
     except Exception as e:
         # Devuelve el error completo para depuración
