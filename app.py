@@ -1,55 +1,40 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from openai import OpenAI
-import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import openai
 
-# Inicializa FastAPI
-app = FastAPI()
+# Inicialización de la app
+app = Flask(__name__)
+CORS(app)  # Permitir CORS desde cualquier origen
 
-# Configura CORS para tu blog
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Cambia "*" por la URL de tu blog si quieres restringir
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Configura tu API Key de OpenAI
+openai.api_key = "TU_API_KEY_AQUI"
 
-# Inicializa cliente de OpenAI
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Modelo de datos
-class ChatRequest(BaseModel):
-    message: str
-
-# Endpoint /chat
-@app.post("/chat")
-async def chat_endpoint(request: ChatRequest):
-    user_message = request.message
-
+@app.route("/chat", methods=["POST"])
+def chat():
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Modelo más barato y rápido
-            messages=[{"role": "user", "content": user_message}]
+        data = request.json
+        prompt = data.get("prompt", "")
+
+        if not prompt:
+            return jsonify({"error": "No se proporcionó un prompt"}), 400
+
+        # Llamada a la API de OpenAI
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=150,
+            temperature=0.7
         )
-        
-        # Aseguramos que extraemos el mensaje correctamente según la versión
-        if hasattr(response.choices[0], "message") and hasattr(response.choices[0].message, "content"):
-            reply = response.choices[0].message.content
-        elif hasattr(response.choices[0], "text"):
-            reply = response.choices[0].text
-        else:
-            reply = "Error: No se pudo obtener la respuesta del chatbot."
-            
+
+        return jsonify({"response": response.choices[0].text.strip()})
+
     except Exception as e:
-        # Esto imprimirá el error en los logs de Render
-        print("Error al llamar a OpenAI:", e)
-        raise HTTPException(status_code=500, detail=f"Error con OpenAI: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
-    return {"reply": reply}
+@app.route("/")
+def index():
+    return jsonify({"message": "API funcionando correctamente"})
 
-# Endpoint raíz para probar
-@app.get("/")
-async def root():
-    return {"message": "API funcionando correctamente!"}
+if __name__ == "__main__":
+    # Para desarrollo local
+    app.run(host="0.0.0.0", port=5000, debug=True)
