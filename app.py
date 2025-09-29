@@ -1,10 +1,20 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import openai
 import os
 
 # Inicializa FastAPI
 app = FastAPI()
+
+# Configura CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cambia "*" por la URL de tu frontend si quieres restringir
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configura tu API key (debe estar en las variables de entorno de Render)
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -21,7 +31,7 @@ async def chat_endpoint(request: ChatRequest):
     try:
         # Llamada a la API de OpenAI (nueva sintaxis >=1.0.0)
         response = openai.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",  # usa este mejor que "gpt-4", es más barato y rápido
             messages=[{"role": "user", "content": user_message}]
         )
         reply = response.choices[0].message.content
@@ -34,20 +44,3 @@ async def chat_endpoint(request: ChatRequest):
 @app.get("/")
 async def root():
     return {"message": "API funcionando correctamente!"}
-    from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-# Configura CORS
-origins = [
-    "*"  # O la URL de tu frontend, ejemplo: "https://mi-frontend.com"
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],  # Permite POST, GET, OPTIONS, etc.
-    allow_headers=["*"],
-)
-
